@@ -1,0 +1,2 @@
+This directory exists as some functionalities will write log files independently of the pytest running.
+One example is the scenario-generation whose processes will write into this directory.
