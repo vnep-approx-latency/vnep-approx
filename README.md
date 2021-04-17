@@ -1,9 +1,10 @@
 
 # Overview
 
-This **Python 3.X** repository contains algorithms to enable the approximation of the **Virtual Network Embedding Algorithm (VNEP)**. It is based on the original **Python 2.7** framework that is also hosted on **[Github at https://github.com/vnep-approx/vnep-approx](https://github.com/vnep-approx/alib)**.
+This **Python 3.X** repository contains algorithms to enable the approximation of the **Virtual Network Embedding Algorithm (VNEP)**. 
 It makes extensive use of our **[alib](https://github.com/vnep-approx-py3/alib)** library. In particular, our algorithms employ
 Gurobi to compute convex combinations of valid mappings to apply **randomized rounding**. We provide the following implementations: 
+
 - A Linear Program (LP) implementation based on our papers [1,2] for cactus request graphs 
 **[modelcreator_ecg_decomposition.py](vnep_approx/modelcreator_ecg_decomposition.py)**.
 - A Linear Program based on our generalized extraction width concept for arbitrary requests based on our paper [3]: 
@@ -18,7 +19,8 @@ This randomized rounding procedure actually executed three different kinds of he
   the MDK computes the optimal rounding given all mapping possibilities found.
 - An implementation of randomized rounding based on a column generation / separation LP approach presented in [5]: using the DynVMP algorithm valid mappings are priced into the LP, where the runtime of DynVMP is polynomial in the input size and exponential in the **tree width** of the request graphs. All code pertaining to this approach can be found in the **[treewidth_model.py](vnep_approx/treewidth_model.py)**.
 - An implementation of the ViNE online heuristics and their offline counterpart WiNE: **[vine.py](vnep_approx/vine.py)** 
-   
+  
+
 Note that our separate Github repositories [evaluation-ifip-networking-2018](https://github.com/vnep-approx/evaluation-ifip-networking-2018) and [evaluation-acm-ccr-2019](https://github.com/vnep-approx/evaluation-acm-ccr-2019)
 provide more explanatiosn on how to generate scenarios and apply algorithms. 
 
@@ -146,6 +148,4 @@ virtual environment (using **pip install spinx**) and executing the above from w
 
 # Contact and Acknowledgement
 
-If you have any questions, either open up an issue on GitHub or write a mail to mrost<AT>inet.tu-berlin<DOT>de.
-
-Major parts of this code were developed under the support of the **German BMBF Software Campus grant 01IS1205** from 2016 to 2018.
+If you have any questions, either open up an issue on GitHub or write a mail to robin.muenk@tum.de
