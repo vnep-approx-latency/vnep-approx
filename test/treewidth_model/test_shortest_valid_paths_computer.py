@@ -1,19 +1,16 @@
+import pickle
+
 import pytest
 from vnep_approx import treewidth_model
 
 import numpy as np
 
-from alib import mip
-from alib import datamodel as dm
 from alib import util
 from .test_data.request_test_data import create_test_request
-from .test_data.substrate_test_data import create_test_substrate_topology_zoo
 from .test_data.substrate_test_data import create_test_substrate_topology_zoo
 
 import random
 import time
-import logging
-import itertools
 
 
 logger = util.get_logger(__name__, make_file=False, propagate=True)
@@ -72,7 +69,7 @@ def test_shortest_valid_paths_computer_no_latencies(substrate_id, cost_spread):
             "\nComputation times were:\n\tBellman-Ford: {:2.4f}\n"
             "\tDijkstra:     {:2.4f}\n"
             "\tSpeedup by using Dijkstra over Bellman: {:2.2f} (<1 is bad)\n".format(
-                bellman_ford_time, dijkstra_time, (bellman_ford_time / dijkstra_time)))
+                bellman_ford_time, dijkstra_time, "infinity" if dijkstra_time == 0 else (bellman_ford_time / dijkstra_time)))
 
 
 
@@ -287,7 +284,7 @@ def test_shortest_valid_paths_with_latencies(substrate_id, cost_spread, epsilon,
                 logger.error("\tSummary\t{:^15s} {:^15s}: {:4d} failed of {:4d} ({:6.3f}%)".format(alg, type, failure_counts[alg][type], number_of_node_combinations, 100.0*failure_counts[alg][type]/float(number_of_node_combinations)))
             else:
                 logger.info(
-                    "\t\Summary\t{:^15s} {:^15s}: {:4d} failed of {:4d} ({:6.3f}%)".format(alg, type, failure_counts[alg][type],
+                    "\tSummary\t{:^15s} {:^15s}: {:4d} failed of {:4d} ({:6.3f}%)".format(alg, type, failure_counts[alg][type],
                                                                                  number_of_node_combinations,
                                                                                  100.0 * failure_counts[alg][type] / float(
                                                                                      number_of_node_combinations)))
