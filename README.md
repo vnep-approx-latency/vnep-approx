@@ -17,7 +17,7 @@ This GitHub Organization contains three repositories which contain the functiona
 
 **[1]** R. Münk, M. Rost, S. Schmid, and H. Räcke. It’s Good to Relax: Fast Profit Approximation for Virtual Networks with Latency Constraints. [Technical Report arXiv:2104.09249 [cs.NI]](https://arxiv.org/abs/2104.09249), April 2021.
 
-**[1]** R. Münk, M. Rost, H. Räcke and S. Schmid, It's Good to Relax: Fast Profit Approximation for Virtual Networks with Latency Constraints, *2021 IFIP Networking Conference (IFIP Networking)*, 2021, pp. 1-3, doi: [10.23919/IFIPNetworking52078.2021.9472197](https://ieeexplore.ieee.org/document/9472197).
+**[2]** R. Münk, M. Rost, H. Räcke and S. Schmid, It's Good to Relax: Fast Profit Approximation for Virtual Networks with Latency Constraints, *2021 IFIP Networking Conference (IFIP Networking)*, 2021, pp. 1-3, doi: [10.23919/IFIPNetworking52078.2021.9472197](https://ieeexplore.ieee.org/document/9472197).
 
 
 # Dependencies and Requirements
@@ -81,7 +81,7 @@ This will create the file `scenarios.pickle` in the /output folder of the **ALIB
 python -m vnep_approx.cli start-experiment $LATENCY_FILES_HOME/example_execution.yml 0 10000 --concurrent 8 --overwrite_existing_intermediate_solutions --remove_intermediate_solutions
 ````
 
-The result will be the file `example_results`. To evaluate these results, use the functionality provided in the  [evaluation-ifip-networking-2021](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) repository.
+The result will be the file `example_results.pickle`. To evaluate these results, use the functionality provided in the  [evaluation-ifip-networking-2021](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) repository.
 
 # Contact
 
