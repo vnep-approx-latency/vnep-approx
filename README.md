@@ -41,7 +41,7 @@ We generally recommend installing our libraries in a virtual environment.
 
 # Usage
 
-**For a detailed walk-through of how to use the algorithms, view the examples in the **[**evaluation-ifip-networking-2021**](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) **repository.**
+**For a detailed walk-through of how to use the algorithms, view the examples in the** [**evaluation-ifip-networking-2021**](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) **repository.**
 
 For generating and executing (etc.) experiments, the environment variable **ALIB_EXPERIMENT_HOME** should be set to a path, such that the subfolders input/ output/ and log/ exist. If this environment variable is not set, the current working directory is traversed upwards until a directory containing input/, output/, and log/ is found.
 
