@@ -1,74 +1,49 @@
 
 # Overview
 
-This **Python 3.X** repository contains algorithms to enable the approximation of the **Virtual Network Embedding Algorithm (VNEP)**. 
-It makes extensive use of our **[alib](https://github.com/vnep-approx-py3/alib)** library. In particular, our algorithms employ
-Gurobi to compute convex combinations of valid mappings to apply **randomized rounding**. We provide the following implementations: 
+This **Python 3** repository contains an extension of approximation algorithms for the **Virtual Network Embedding Algorithm (VNEP)**, adapting them to also account for **Latency Constraints**. The implementation is largely based on the original framework at **[github.com/vnep-approx-py3](https://github.com/vnep-approx-py3)** while the theoretical results are thoroughly laid out in our Technical Report **[1]** and our shortened paper **[2]**, as published in IFIP Networking 2021 Poster Session. The repository contains the implementation of our novel algorithm **FLEX**.
 
-- A Linear Program (LP) implementation based on our papers [1,2] for cactus request graphs 
-**[modelcreator_ecg_decomposition.py](vnep_approx/modelcreator_ecg_decomposition.py)**.
-- A Linear Program based on our generalized extraction width concept for arbitrary requests based on our paper [3]: 
-**[commutativity_model.py](vnep_approx/commutativity_model.py)**
-- A Linear Program enabling the handling of decisions (outgoing edges represent choices) extending the formulation presented in [4]: **[gadget_model.py](vnep_approx/gadget_model.py)**.
-- A implementation of randomized rounding for cactus request graphs **[randomized_rounding_triumvirate.py](vnep_approx/randomized_rounding_triumvirate.py)**. 
-This randomized rounding procedure actually executed three different kinds of heuristics:
-  - **Vanilla rounding**: simply round solutions and select the best one found within a fixed number of iterations (see [2,6]).
-  - **Heuristic rounding**: perform the rounding while discarding selected (i.e. rounded) mappings whose addition would 
-  exceed resource capacities. Accordingly: this heuristic always yields feasible solutions (see [2,6]).
-  - **Multi-dimensional knapsack (MDK)**: given the decomposition into convex combinations of valid mappings for each request,
-  the MDK computes the optimal rounding given all mapping possibilities found.
-- An implementation of randomized rounding based on a column generation / separation LP approach presented in [5]: using the DynVMP algorithm valid mappings are priced into the LP, where the runtime of DynVMP is polynomial in the input size and exponential in the **tree width** of the request graphs. All code pertaining to this approach can be found in the **[treewidth_model.py](vnep_approx/treewidth_model.py)**.
-- An implementation of the ViNE online heuristics and their offline counterpart WiNE: **[vine.py](vnep_approx/vine.py)** 
-  
+For a more thorough overview of the algorithms, its usages, docs and test, simply view the [Original Implementation](https://github.com/vnep-approx-py3) and consult the corresponding papers.
 
-Note that our separate Github repositories [evaluation-ifip-networking-2018](https://github.com/vnep-approx/evaluation-ifip-networking-2018) and [evaluation-acm-ccr-2019](https://github.com/vnep-approx/evaluation-acm-ccr-2019)
-provide more explanatiosn on how to generate scenarios and apply algorithms. 
+### Structure
 
-## Papers
+This GitHub Organization contains three repositories which contain the functionality for solving the VNEP with latency constraints and evaluating the results: 
 
-**[1]** Matthias Rost, Stefan Schmid: Service Chain and Virtual Network Embeddings: Approximations using Randomized Rounding. [CoRR abs/1604.02180](https://arxiv.org/abs/1604.02180) (2016)
+- **[alib](https://github.com/vnep-approx/alib)**: A library providing the basic data model and the Mixed-Integer Program for the classic multi-commodity formulation.
+- **[vnep_approx](https://github.com/vnep-approx/vnep_approx)**: Provides Linear Programming formulations, specifically the one based on the DynVMP algorithm, as well as Randomized Rounding algorithms to solve the VNEP.
+- **[evaluation-ifip-networking-2021](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021)**: Provides functionality for evaluating experiment artifacts to create plots to compare runtime, profits and other algorithm parameters.
 
-**[2]** Matthias Rost, Stefan Schmid: Virtual Network Embedding Approximations: Leveraging Randomized Rounding. IFIP Networking 2018. (see [arXiv](https://arxiv.org/abs/1803.03622) for the corresponding technical report)
+### Papers
 
-**[3]** Matthias Rost, Stefan Schmid: (FPT-)Approximation Algorithms for the Virtual Network Embedding Problem. [CoRR abs/1803.04452](https://arxiv.org/abs/1803.04452) (2018)
+**[1]** R. Münk, M. Rost, S. Schmid, and H. Räcke. It’s Good to Relax: Fast Profit Approximation for Virtual Networks with Latency Constraints. [Technical Report arXiv:2104.09249 [cs.NI]](https://arxiv.org/abs/2104.09249), April 2021.
 
-**[4]** Guy Even, Matthias Rost, Stefan Schmid: An Approximation Algorithm for Path Computation and Function Placement in SDNs. [SIROCCO 2016: 374-390](https://link.springer.com/chapter/10.1007%2F978-3-319-48314-6_24)
-
-**[5]** Matthias Rost, Elias Döhne, Stefan Schmid: Parametrized Complexity of Virtual Network Embeddings: Dynamic & Linear Programming Approximations. [ACM CCR January 2019](https://ccronline.sigcomm.org/wp-content/uploads/2019/02/sigcomm-ccr-final255.pdf)
-
-**[6]** Matthias Rost, Stefan Schmid: Virtual network embedding approximations: Leveraging randomized rounding. [IEEE/ACM Transactions on Networking 27 (5), 2019.](https://ieeexplore.ieee.org/abstract/document/8846601)
+**[1]** R. Münk, M. Rost, H. Räcke and S. Schmid, It's Good to Relax: Fast Profit Approximation for Virtual Networks with Latency Constraints, *2021 IFIP Networking Conference (IFIP Networking)*, 2021, pp. 1-3, doi: [10.23919/IFIPNetworking52078.2021.9472197](https://ieeexplore.ieee.org/document/9472197).
 
 
 # Dependencies and Requirements
 
-The **vnep_approx** library requires Python 3.X. Required python libraries are gurobipy, numpy, matplotlib, click, and  **[alib](https://github.com/vnep-approx-py3/alib)**.
+The **vnep_approx** library requires Python 3 and heavily relies on the **[alib](https://github.com/vnep-approx-py3/alib)** package. Required python libraries are gurobipy, numpy, matplotlib, click.
 
 Furthermore, we use Tamaki's algorithm presented in his [paper at ESA 2017](http://drops.dagstuhl.de/opus/volltexte/2017/7880/pdf/LIPIcs-ESA-2017-68.pdf) to compute tree decompositions (efficiently). The corresponding GitHub repository [TCS-Meiji/PACE2017-TrackA](https://github.com/TCS-Meiji/PACE2017-TrackA) must be cloned locally and the environment variable **PACE_TD_ALGORITHM_PATH** must be set to point the location of the repository: PACE_TD_ALGORITHM_PATH="$PATH_TO_PACE/PACE2017-TrackA".
 Gurobi must be installed and the .../gurobi64/lib directory added to the environment variable LD_LIBRARY_PATH.
 
-For generating and executing (etc.) experiments, the environment variable **ALIB_EXPERIMENT_HOME** should be set to a path,
-such that the subfolders input/ output/ and log/ exist. If this environment variable is not set, the current working directory is traversed upwards until a directory containing input/, output/, and log/ is found.
+# Installation
 
-**Note**: Our source was tested on Linux (specifically Ubuntu 14 and Ubuntu 16) and Mac OS X 10.15.  
+Install each of the **[alib](https://github.com/vnep-approx/alib)** and **vnep_approx** packages using the setup script we provide. Simply execute from within each of the packages root directories: 
 
-# Overview
-
-To install **vnep_approx**, we provide a setup script. Simply execute from within vnep_approx's root directory: 
-
-```
-pip install .
-```
-
-Furthermore, if the code base will be edited by you, we propose to install it as editable:
 ```
 pip install -e .
 ```
-When choosing this option, sources are not copied during the installation but the local sources are used: changes to
-the sources are directly reflected in the installed package.
 
-We generally propose to install **vnep_approx** into a virtual environment (together with **alib**).
+When choosing the `-e` option, sources are not copied during the installation but the local sources are used: changes to the sources are directly reflected in the installed package.
+
+We generally recommend installing our libraries in a virtual environment.
 
 # Usage
+
+**For a detailed walk-through of how to use the algorithms, view the examples in the **[**evaluation-ifip-networking-2021**](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) **repository.**
+
+For generating and executing (etc.) experiments, the environment variable **ALIB_EXPERIMENT_HOME** should be set to a path, such that the subfolders input/ output/ and log/ exist. If this environment variable is not set, the current working directory is traversed upwards until a directory containing input/, output/, and log/ is found.
 
 You may either use our code via our API by importing the library or via our command line interface:
 
@@ -88,64 +63,26 @@ Commands:
                       several algorithm contained in this library
 ```
 
-# Tests
+Both generating scenarios and running an experiment requires a different YAML file which contains the necessary configuration. Examples can be found in the examples folder.
 
+## Example 
 
-The test directory contains a large number of tests to check the correctness of our implementation and might also be useful
-to understand the code. 
+An example execution using the **alib** and **vnep-approx** packages can the be started like follows. This assumes that the **ALIB_EXPERIMENT_HOME** environment variable is set as described above and also the **LATENCY_FILES_HOME**  environment variable points to a folder that contains the configuration files `example_scenarios.yml` and `example_execution.yml`. Suggestions for these configuration files are provided in the /examples folder. 
 
-To execute the tests, simply execute pytest in the test directory.
+First run the following command to generate the scenarios.
 
-```
-pytest .
-```
+````
+python -m vnep_approx.cli generate-scenarios scenarios.pickle $LATENCY_FILES_HOME/example_scenarios.yml
+````
 
-Some tests use extensive logging in case of failures. In the [conftest.py](test/conftest.py), we overwrite some default logging behaviours 
-to better suit our needs. In particular, you may use the following options:
+This will create the file `scenarios.pickle` in the /output folder of the **ALIB_EXPERIMENT_HOME** directory. Move it to the /input folder and execute the following.
 
-```
---log-cli-level     determines whether and if log outputs are output via stdout (the cli)
---log-level         determines the log level of messages to be written in a log file
---log-file          determines the name of the log file to be written; if not given no log file is written
-```
+````
+python -m vnep_approx.cli start-experiment $LATENCY_FILES_HOME/example_execution.yml 0 10000 --concurrent 8 --overwrite_existing_intermediate_solutions --remove_intermediate_solutions
+````
 
-Importantly, log files are always created within separate directories. The (fixed) naming scheme is as follows:
-```
-log_YYYY_MM_DD_HH_X
-```
-where X denotes a counter that is automatically incremented.
+The result will be the file `example_results`. To evaluate these results, use the functionality provided in the  [evaluation-ifip-networking-2021](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) repository.
 
-## pytest-xdist
+# Contact
 
-Our changes to the logging behaviour facilitate the usage of pytest-xdist to parallelize test execution. If pytest-xdist is installed and used, then
-for each worker a separate log file is created and written to. The name of the log files is derived from the file base of the --log-level option.
-For example, using the following command
-```
-pytest -n 4 --log-file log.log --log-level debug .
-```
-the following log files are created:
-```
-log_YYYY_MM_DD_HH_X
-|_ log_worker_0.log
-|_ log_worker_1.log
-|_ log_worker_2.log
-|_ log_worker_3.log
-```
-
-# API Documentation
-
-We provide a basic template to create an API documentation using **[Sphinx](http://www.sphinx-doc.org)**. 
-
-To create the documentation, simply execute the makefile in **[docs/](docs/)**. Specifically, run for example
-
-```
-make html
-```
-to create the HTML documentation.
-
-Note that **alib** must lie on the PYTHONPATH. If you use a virtual environment, we propose to install sphinx within the
-virtual environment (using **pip install spinx**) and executing the above from within the virtual environment. 
-
-# Contact and Acknowledgement
-
-If you have any questions, either open up an issue on GitHub or write a mail to robin.muenk@tum.de
+If you have any questions, either open up an issue on GitHub or write a mail to [robin.muenk@tum.de](mailto:robin.muenk@tum.de).
