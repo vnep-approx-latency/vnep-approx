@@ -503,21 +503,24 @@ class ShortestValidPathsComputer_NoLatencies(object):
 
     ''' This class is optimized to compute all shortest paths in the substrate quickly for varying valid edge sets.
     '''
-    def __init__(self, substrate, request, valid_mapping_restriction_computer, edge_costs):
+    def __init__(self, substrate, request, valid_mapping_restriction_computer, edge_costs, edge_latencies=None):
         self.substrate = substrate
         self.request = request
         self.valid_mapping_restriction_computer = valid_mapping_restriction_computer
         self.edge_costs = edge_costs
+        self.edge_latencies = edge_latencies if edge_latencies is not None else {}
         self.edge_mapping_invalidities = False
 
     def compute(self):
         self.number_of_nodes = len(self.substrate.nodes)
         self.distance = np.full(self.number_of_nodes, np.inf, dtype=np.float64)
+        self.latency = np.full(self.number_of_nodes, np.inf, dtype=np.float64)
         self.predecessor = np.full(self.number_of_nodes, -1, dtype=np.int32)
 
         self.edge_set_id_to_edge_set = self.valid_mapping_restriction_computer.get_edge_set_mapping()
         self.number_of_valid_edge_sets = self.valid_mapping_restriction_computer.get_number_of_different_edge_sets()
         self.valid_sedge_costs = {id: {} for id in range(self.number_of_valid_edge_sets)}
+        self.valid_sedge_latencies = {id: {} for id in range(self.number_of_valid_edge_sets)}
         self.valid_sedge_pred = {id: {} for id in range(self.number_of_valid_edge_sets)}
 
 
@@ -553,7 +556,7 @@ class ShortestValidPathsComputer_NoLatencies(object):
                 if sedge in valid_edge_set:
                     _, out_neighbor = sedge
                     num_id_neighbor = self.snode_id_to_num_id[out_neighbor]
-                    neighbor_and_cost_list.append((num_id_neighbor, self.edge_costs[sedge]))
+                    neighbor_and_cost_list.append((num_id_neighbor, self.edge_costs[sedge], self.edge_latencies.get(sedge, 0)))
 
             out_neighbors_with_cost.append(neighbor_and_cost_list)
 
@@ -569,24 +572,28 @@ class ShortestValidPathsComputer_NoLatencies(object):
 
                 #reinitialize it
                 self.distance.fill(np.inf)
+                self.latency.fill(np.inf)
                 self.predecessor.fill(-1)
 
-                queue = [(0.0, (num_source_node, num_source_node))]
+                queue = [(0.0, 0.0, (num_source_node, num_source_node))]
                 while queue:
-                    dist, (num_node, num_predecessor) = heappop(queue)
+                    dist, lat, (num_node, num_predecessor) = heappop(queue)
                     if self.predecessor[num_node] == -1:
                         self.distance[num_node] = dist
+                        self.latency[num_node] = lat
                         self.predecessor[num_node] = num_predecessor
 
-                        for num_neighbor, edge_cost in out_neighbors_with_cost[num_node]:
+                        for num_neighbor, edge_cost, edge_latency in out_neighbors_with_cost[num_node]:
                             if self.predecessor[num_neighbor] == -1:
-                                heappush(queue, (dist + edge_cost, (num_neighbor, num_node)))
+                                heappush(queue, (dist + edge_cost, lat + edge_latency, (num_neighbor, num_node)))
 
                 for num_target_node in range(self.number_of_nodes):
                     if self.distance[num_target_node] != np.inf:
                         self.valid_sedge_costs[edge_set_index][(self.num_id_to_snode_id[num_source_node], self.num_id_to_snode_id[num_target_node])] = self.distance[num_target_node]
+                        self.valid_sedge_latencies[edge_set_index][(self.num_id_to_snode_id[num_source_node], self.num_id_to_snode_id[num_target_node])] = self.latency[num_target_node]
                     else:
                         self.valid_sedge_costs[edge_set_index][(self.num_id_to_snode_id[num_source_node], self.num_id_to_snode_id[num_target_node])] = np.nan
+                        self.valid_sedge_latencies[edge_set_index][(self.num_id_to_snode_id[num_source_node], self.num_id_to_snode_id[num_target_node])] = 0
                         self.edge_mapping_invalidities = True
 
                 converted_pred_dict = {self.num_id_to_snode_id[num_node] : self.num_id_to_snode_id[self.predecessor[num_node]] if self.predecessor[num_node] != -1 else None for num_node in range(self.number_of_nodes)  }
@@ -596,6 +603,7 @@ class ShortestValidPathsComputer_NoLatencies(object):
 
         for request_edge, edge_set_id_to_edge_set in request_edge_to_edge_set_id.items():
             self.valid_sedge_costs[request_edge] = self.valid_sedge_costs[edge_set_id_to_edge_set]
+            self.valid_sedge_latencies[request_edge] = self.valid_sedge_latencies[edge_set_id_to_edge_set]
             self.valid_sedge_pred[request_edge] = self.valid_sedge_pred[edge_set_id_to_edge_set]
 
 
@@ -617,6 +625,8 @@ class ShortestValidPathsComputer_NoLatencies(object):
         path = list(reversed(path))
         return path
 
+    def get_latency_for_reqedge(self, request_edge, source_mapping, target_mapping):
+        return self.valid_sedge_latencies[request_edge][source_mapping, target_mapping]
 
 class ShortestValidPathsComputer(object):
 
@@ -638,7 +648,7 @@ class ShortestValidPathsComputer(object):
         elif approx_type == ShortestValidPathsComputer.Approx_Exact_MIP:
             return ShortestValidPathsComputer_Exact_MIP(substrate, valid_mapping_restriction_computer, edge_costs, edge_latencies, epsilon, limit)
         elif approx_type == ShortestValidPathsComputer.Approx_NoLatencies:
-            return ShortestValidPathsComputer_NoLatencies(substrate, None, valid_mapping_restriction_computer, edge_costs)
+            return ShortestValidPathsComputer_NoLatencies(substrate, None, valid_mapping_restriction_computer, edge_costs, edge_latencies)
         else:
             raise RuntimeError("Latency approximation type not known!")
 
@@ -675,6 +685,7 @@ class ShortestValidPathsComputer(object):
         self.edge_set_id_to_edge_set = 0
         self.number_of_valid_edge_sets = 0
         self.valid_sedge_costs = dict()
+        self.valid_sedge_latencies = dict()
         self.valid_sedge_paths = dict()
 
     def compute(self):
@@ -688,6 +699,7 @@ class ShortestValidPathsComputer(object):
 
         for edgesetindex in range(self.number_of_valid_edge_sets):
             self.valid_sedge_costs[edgesetindex] = {}
+            self.valid_sedge_latencies[edgesetindex] = {}
             self.valid_sedge_paths[edgesetindex] = {}
 
         if self.number_of_valid_edge_sets == 0:
@@ -756,6 +768,10 @@ class ShortestValidPathsComputer(object):
         edge_set_id = request_edge_to_edge_set_id[request_edge]
         return self.valid_sedge_paths[edge_set_id][source_mapping].get(target_mapping, [])
 
+    def get_latency_for_reqedge(self, request_edge, source_mapping, target_mapping):
+        request_edge_to_edge_set_id = self.valid_mapping_restriction_computer.get_reqedge_to_edgeset_id_mapping()
+        edge_set_id = request_edge_to_edge_set_id[request_edge]
+        return self.valid_sedge_latencies[edge_set_id][source_mapping, target_mapping]
 
 class ShortestValidPathsComputer_Flex(ShortestValidPathsComputer):
     def __init__(self, substrate, valid_mapping_restriction_computer, edge_costs, edge_latencies, epsilon, limit):
@@ -892,6 +908,7 @@ class ShortestValidPathsComputer_Flex(ShortestValidPathsComputer):
                     target_snode = self.num_id_to_snode_id[num_target_node]
                     costs = self.distances[num_target_node][final_tau]
                     self.valid_sedge_costs[edge_set_index][(source_snode, target_snode)] = costs
+                    self.valid_sedge_latencies[edge_set_index][(source_snode, target_snode)] = self.temp_latencies[num_target_node]
 
                     if not np.isnan(costs) and self.temp_latencies[num_target_node] > self.limit:
                         self.latency_limit_overstepped = True
@@ -907,27 +924,27 @@ class ShortestValidPathsComputer_Strict(ShortestValidPathsComputer):
                                                                 edge_costs, edge_latencies, epsilon, limit)
 
         self.FAIL = (None, np.nan)
-        self.predecessors = np.full(self.number_of_nodes, -1, dtype=np.int32)
-        self.distances = np.full((self.number_of_nodes, 1000), np.inf)
+        self.predecessors = np.full((self.number_of_nodes, 1024), -1, dtype=np.int32)
+        self.distances = np.full((self.number_of_nodes, 1024), np.inf)
 
-    def _SPPP(self, lower, upper, eps, num_source_node, num_target_node):
-        S = float(lower * eps) / (self.num_feasible_nodes + 1)
-
-        rescaled_costs = dict(zip(self.current_valid_edge_set, [int(float(self.edge_costs[x]) / S) + 1 for x in self.current_valid_edge_set]))
-
-        U_tilde = int(upper / S) + self.num_feasible_nodes + 1
+    def _SPPP(self, lower, upper, eps, num_source_node, num_target_node, tracePath=True):
+        rescaled_costs = { x : int(( self.edge_costs[x] * (self.num_feasible_nodes + 1)) / (lower * eps))  + 1 for x in self.current_valid_edge_set }
+        U_tilde = int(( upper * (self.num_feasible_nodes + 1)) / (lower * eps)) + self.num_feasible_nodes + 1
 
         if U_tilde + 1 >= np.shape(self.distances)[1]:
-            self.distances = np.full((self.number_of_nodes, U_tilde + 1), np.inf, dtype=np.float64)
+            self.distances = np.full((self.number_of_nodes, U_tilde + 1), np.inf, dtype=np.float32)
+            self.predecessors = np.full((self.number_of_nodes, U_tilde + 1), np.inf, dtype=np.int32)
         else:
             self.distances.fill(np.inf)
+            self.predecessors.fill(-1)
 
         self.distances[num_source_node][0] = 0
-        self.predecessors[num_source_node] = num_source_node
+        self.predecessors[num_source_node][0] = num_source_node
 
         for i in range(1, U_tilde+1):
             for n in self.node_nums:
                 self.distances[n][i] = self.distances[n][i-1]
+                self.predecessors[n][i] = self.predecessors[n][i-1]
 
                 for e in self.substrate.in_edges[self.num_id_to_snode_id[n]]:
                     if self.sedge_valid.get(e, False) and rescaled_costs[e] <= i:
@@ -936,32 +953,35 @@ class ShortestValidPathsComputer_Strict(ShortestValidPathsComputer):
 
                         if comp_val < self.distances[n][i]:
                             self.distances[n][i] = comp_val
-                            self.predecessors[n] = self.snode_id_to_num_id[u]
+                            self.predecessors[n][i] = self.snode_id_to_num_id[u]
 
             if self.distances[num_target_node][i] <= self.limit:
                 # retrace path from t to s
-                n = num_target_node
                 path = []
                 total_costs = 0
-                while n != num_source_node:
-                    pred = self.predecessors[n]
-                    sedge = self.num_id_to_snode_id[pred], self.num_id_to_snode_id[n]
-                    path.append(sedge)
-                    total_costs += self.edge_costs[sedge]
-                    n = pred
-                path = list(reversed(path))
+                if tracePath and num_source_node != num_target_node:
+                    n = num_target_node
+                    pos = i
+                    while n != num_source_node:
+                        pred = self.predecessors[n][pos] # assert (pred >= 0)
+                        sedge = self.num_id_to_snode_id[pred], self.num_id_to_snode_id[n]
+                        path.append(sedge)
+                        total_costs += self.edge_costs[sedge]
+                        pos -= rescaled_costs[sedge]
+                        n = pred
+                    path = list(reversed(path))
 
-                return path, total_costs
+                return path, self.distances[num_target_node][i], total_costs
 
         return self.FAIL
 
     def _Hassin(self, lower, upper, num_source_node, num_target_node):
-        b_low = lower
-        b_up = math.ceil(upper / 2)
+        b_low = float(lower)
+        b_up = math.ceil(float(upper) / 2)
 
         while b_low == 0 or b_up / b_low > 2:
             b = math.sqrt(b_low * b_up)
-            if self._SPPP(b, b, 1, num_source_node, num_target_node) == self.FAIL:
+            if self._SPPP(b, b, 1, num_source_node, num_target_node, False) == self.FAIL:
                 b_low = b
             else:
                 b_up = b
@@ -970,12 +990,11 @@ class ShortestValidPathsComputer_Strict(ShortestValidPathsComputer):
 
 
     def _sort_edges_distinct(self):
-        return list(set([self.edge_costs[x] for x in
-                    sorted(self.current_valid_edge_set, key=lambda i: self.edge_costs[i])]))
+        return sorted(list(set(map(lambda e: self.edge_costs[e], self.current_valid_edge_set))))
 
 
     def _shortest_path_latencies_limited(self, limit, num_source_node, num_target_node, retPath=False):
-        queue = [(0, num_source_node)]
+        queue = [(0.0, num_source_node)]
         self.temp_latencies.fill(np.inf)
         self.temp_latencies[num_source_node] = 0
         if retPath:
@@ -988,29 +1007,29 @@ class ShortestValidPathsComputer_Strict(ShortestValidPathsComputer):
                 break
 
             for sedge in self.substrate.out_edges[self.num_id_to_snode_id[num_current_node]]:
-                if self.sedge_valid.get(sedge, False): # sedge in self.current_valid_edge_set:
+                if self.sedge_valid.get(sedge, False) and self.edge_costs[sedge] <= limit:  # this is where the induced subgraph G_j comes in
                     num_endpoint = self.snode_id_to_num_id[sedge[1]]
-                    cost = self.edge_costs[sedge]
                     lat = self.edge_latencies[sedge]
-                    if cost <= limit:  # this is where the induced subgraph G_j comes in
-                        if total_latencies + lat < self.temp_latencies[num_endpoint]:
-                            self.temp_latencies[num_endpoint] = total_latencies + lat
-                            heappush(queue, (total_latencies + lat, num_endpoint))
-                            if retPath:
-                                preds[num_endpoint] = num_current_node
+                    if total_latencies + lat < self.temp_latencies[num_endpoint]:
+                        self.temp_latencies[num_endpoint] = total_latencies + lat
+                        heappush(queue, (total_latencies + lat, num_endpoint))
+                        if retPath:
+                            preds[num_endpoint] = num_current_node
 
         if retPath:
             n = num_target_node
             path = []
             total_costs = 0
+            total_latency = 0
             while n != num_source_node:
                 pred = preds[n]
                 sedge = self.num_id_to_snode_id[pred], self.num_id_to_snode_id[n]
                 path.append(sedge)
                 total_costs += self.edge_costs[sedge]
+                total_latency += self.edge_latencies[sedge]
                 n = pred
             path = list(reversed(path))
-            return path, total_costs
+            return path, total_latency, total_costs
         else:
             return self.temp_latencies[num_target_node]
 
@@ -1018,19 +1037,18 @@ class ShortestValidPathsComputer_Strict(ShortestValidPathsComputer):
     def _approx_latencies(self, num_source_node, num_target_node):
 
         if num_source_node == num_target_node:
-            return [], 0
+            return [], 0, 0
 
-        low, high = -1, len(self.edge_levels_sorted)-1
+        low, high = 0, len(self.edge_levels_sorted)-1
 
-        while low < high - 1:
+        while low < high-1:
             j = int((low + high) / 2)
-            if self._shortest_path_latencies_limited(self.edge_levels_sorted[j], num_source_node,
-                                                     num_target_node) < self.limit:
+            if self._shortest_path_latencies_limited(self.edge_levels_sorted[j], num_source_node, num_target_node) < self.limit:
                 high = j
             else:
                 low = j
 
-        lower = self.edge_levels_sorted[high]
+        lower = self.edge_levels_sorted[max(high, 0)]
 
         if lower == 0:
             return self._shortest_path_latencies_limited(0, num_source_node, num_target_node, True)
@@ -1042,7 +1060,6 @@ class ShortestValidPathsComputer_Strict(ShortestValidPathsComputer):
     def _compute_all_pairs(self):
 
         for edge_set_index in range(self.number_of_valid_edge_sets):
-
             self._prepare_valid_edges(edge_set_index)
             self.edge_levels_sorted = self._sort_edges_distinct()
 
@@ -1053,9 +1070,10 @@ class ShortestValidPathsComputer_Strict(ShortestValidPathsComputer):
 
                 for num_target_node in self.node_nums:
 
-                    path, costs = self._approx_latencies(num_source_node, num_target_node)
+                    path, latency, costs = self._approx_latencies(num_source_node, num_target_node)
 
                     self.valid_sedge_costs[edge_set_index][(self.num_id_to_snode_id[num_source_node], self.num_id_to_snode_id[num_target_node])] = costs
+                    self.valid_sedge_latencies[edge_set_index][self.num_id_to_snode_id[num_source_node], self.num_id_to_snode_id[num_target_node]] = latency
                     converted_path_dict[self.num_id_to_snode_id[num_target_node]] = path
 
                 self.valid_sedge_paths[edge_set_index][self.num_id_to_snode_id[num_source_node]] = converted_path_dict
@@ -1824,10 +1842,11 @@ class OptimizedDynVMP(object):
         self._initialize_costs(initial_snode_costs, initial_sedge_costs)
 
         self.vmrc = ValidMappingRestrictionComputer(substrate=substrate, request=request)
+        self.latency_limit = limit
 
         try:
             # rescale limit value to adapt to different substrate sizes
-            limit *= substrate.get_average_node_distance()
+            self.latency_limit *= substrate.get_average_node_distance()
         except:
             pass
 
@@ -1837,7 +1856,7 @@ class OptimizedDynVMP(object):
                                                           self.sedge_costs,
                                                           self.sedge_latencies,
                                                           epsilon,
-                                                          limit)
+                                                          self.latency_limit)
 
         self.lat_approx_type = lat_approx_type
 
@@ -1949,17 +1968,19 @@ class OptimizedDynVMP(object):
 
         reqedge_mappings = {}
         for reqedge in self.request.edges:
-            reqedge_mappings[reqedge] = self._reconstruct_edge_mapping(reqedge, reqnode_mappings[reqedge[0]], reqnode_mappings[reqedge[1]])
+            reqedge_mappings[reqedge] = self._reconstruct_edge_mapping(reqedge, reqnode_mappings[reqedge[0]], reqnode_mappings[reqedge[1]]), \
+                                        self.svpc.get_latency_for_reqedge(reqedge, reqnode_mappings[reqedge[0]], reqnode_mappings[reqedge[1]])
 
         result_mapping = solutions.Mapping("dynvmp_mapping_{}".format(self.request.name),
                                     self.request,
                                     self.substrate,
-                                    True)
+                                    True,
+                                    latency_limit=self.latency_limit)
 
         for reqnode, mapping_thereof in reqnode_mappings.items():
             result_mapping.map_node(reqnode, mapping_thereof)
-        for reqedge, mapping_thereof in reqedge_mappings.items():
-            result_mapping.map_edge(reqedge, mapping_thereof)
+        for reqedge, (mapping_thereof, latency) in reqedge_mappings.items():
+            result_mapping.map_edge(reqedge, mapping_thereof, latency=latency)
 
         return root_cost, result_mapping
 
