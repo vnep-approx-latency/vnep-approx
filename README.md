@@ -30,7 +30,7 @@ Furthermore, we use Tamaki's algorithm presented in his [paper at ESA 2017](http
 
 # Installation
 
-Install each of the **[alib](https://github.com/vnep-approx/alib)** and **vnep_approx** packages using the setup script we provide. Simply execute from within each of the packages root directories: 
+Install each of the **[alib](https://github.com/vnep-approx-latency/alib)** and **vnep_approx** packages using the setup script we provide. Simply execute from within each of the packages root directories: 
 
 ```
 pip install -e .
