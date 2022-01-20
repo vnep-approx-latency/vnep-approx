@@ -9,8 +9,8 @@ For a more thorough overview of the algorithms, its usages, docs and test, simpl
 
 This GitHub Organization contains three repositories which contain the functionality for solving the VNEP with latency constraints and evaluating the results: 
 
-- **[alib](https://github.com/vnep-approx/alib)**: A library providing the basic data model and the Mixed-Integer Program for the classic multi-commodity formulation.
-- **[vnep_approx](https://github.com/vnep-approx/vnep_approx)**: Provides Linear Programming formulations, specifically the one based on the DynVMP algorithm, as well as Randomized Rounding algorithms to solve the VNEP.
+- **[alib](https://github.com/vnep-approx-latency/alib)**: A library providing the basic data model and the Mixed-Integer Program for the classic multi-commodity formulation.
+- **[vnep_approx](https://github.com/vnep-approx-latency/vnep-approx)**: Provides Linear Programming formulations, specifically the one based on the DynVMP algorithm, as well as Randomized Rounding algorithms to solve the VNEP.
 - **[evaluation-ifip-networking-2021](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021)**: Provides functionality for evaluating experiment artifacts to create plots to compare runtime, profits and other algorithm parameters.
 
 ### Papers
@@ -22,10 +22,11 @@ This GitHub Organization contains three repositories which contain the functiona
 
 # Dependencies and Requirements
 
-The **vnep_approx** library requires Python 3 and heavily relies on the **[alib](https://github.com/vnep-approx-py3/alib)** package. Required python libraries are gurobipy, numpy, matplotlib, click.
+The **vnep_approx** library requires Python 3.7 and heavily relies on the **[alib](https://github.com/vnep-approx-latency/alib)** package..
+
+The [Gurobi Solver](https://www.gurobi.com/) must be installed and the .../gurobi64/lib directory added to the environment variable LD_LIBRARY_PATH.
 
 Furthermore, we use Tamaki's algorithm presented in his [paper at ESA 2017](http://drops.dagstuhl.de/opus/volltexte/2017/7880/pdf/LIPIcs-ESA-2017-68.pdf) to compute tree decompositions (efficiently). The corresponding GitHub repository [TCS-Meiji/PACE2017-TrackA](https://github.com/TCS-Meiji/PACE2017-TrackA) must be cloned locally and the environment variable **PACE_TD_ALGORITHM_PATH** must be set to point the location of the repository: PACE_TD_ALGORITHM_PATH="$PATH_TO_PACE/PACE2017-TrackA".
-Gurobi must be installed and the .../gurobi64/lib directory added to the environment variable LD_LIBRARY_PATH.
 
 # Installation
 
@@ -41,7 +42,7 @@ We generally recommend installing our libraries in a virtual environment.
 
 # Usage
 
-**For a detailed walk-through of how to use the algorithms, view the examples in the** [**evaluation-ifip-networking-2021**](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) **repository.**
+**For a detailed walk-through of how to use the algorithms and reproduce the results from the paper, please view the examples in the** [**evaluation-ifip-networking-2021**](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) **repository.**
 
 For generating and executing (etc.) experiments, the environment variable **ALIB_EXPERIMENT_HOME** should be set to a path, such that the subfolders input/ output/ and log/ exist. If this environment variable is not set, the current working directory is traversed upwards until a directory containing input/, output/, and log/ is found.
 
@@ -81,7 +82,7 @@ This will create the file `scenarios.pickle` in the /output folder of the **ALIB
 python -m vnep_approx.cli start-experiment $LATENCY_FILES_HOME/example_execution.yml 0 10000 --concurrent 8 --overwrite_existing_intermediate_solutions --remove_intermediate_solutions
 ````
 
-The result will be the file `example_results`. To evaluate these results, use the functionality provided in the  [evaluation-ifip-networking-2021](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) repository.
+The result will be the file `example_results.pickle`. To evaluate these results, use the functionality provided in the  [evaluation-ifip-networking-2021](https://github.com/vnep-approx-latency/evaluation-ifip-networking-2021) repository.
 
 # Contact
 
